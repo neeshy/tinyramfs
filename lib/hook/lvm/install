@@ -1,0 +1,37 @@
+# vim: set ft=sh:
+# shellcheck shell=sh
+#
+# https://shellcheck.net/wiki/SC2154
+# shellcheck disable=2154
+
+if [ -n "$hostonly" ]; then
+    for mod in \
+            dm-log dm-cache dm-mirror \
+            dm-snapshot dm-multipath dm-thin-pool; do
+        copy_kmod "$mod"
+    done
+fi
+
+[ -n "$lvm_group" ] && add_config lvm_group "$lvm_group"
+[ -n "$lvm_name" ] && add_config lvm_name "$lvm_name"
+[ -n "$lvm_tag" ] && add_config lvm_tag "$lvm_tag"
+[ -n "$lvm_discard" ] && add_config lvm_discard "$lvm_discard"
+
+copy_exec lvm
+
+config='
+    devices {
+        write_cache_state = 0
+    }
+    backup {
+        backup  = 0
+        archive = 0
+    }
+    global {
+        use_lvmetad = 0
+    }'
+
+mkdir -p "$tmpdir/etc/lvm"
+
+lvm config --config "$config" \
+    ${lvm_config:+--mergedconfig} >"$tmpdir/etc/lvm/lvm.conf"

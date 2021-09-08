@@ -4,78 +4,130 @@
 # https://shellcheck.net/wiki/SC2034
 # shellcheck disable=2154,2034
 
-init_base()
-{
-    mount -t proc     -o nosuid,noexec,nodev     proc /proc
-    mount -t sysfs    -o nosuid,noexec,nodev     sys  /sys
-    mount -t tmpfs    -o nosuid,nodev,mode=0755  run  /run
-    mount -t devtmpfs -o nosuid,noexec,mode=0755 dev  /dev
+set -e
 
-    ln -s /proc/self/fd /dev/fd
-    ln -s fd/0          /dev/stdin
-    ln -s fd/1          /dev/stdout
-    ln -s fd/2          /dev/stderr
+err() {
+    printf '!> %s\n' "${1:-unexpected error occurred}" >&2
 }
 
-eval_hooks()
-{
-    _type=$1
+panic() {
+    err "$@"
+    sh
+}
+
+panic_exec() {
+    err "$@"
+    exec sh
+}
+
+resolve_device() {
+    device="$1"
+
+    case "$device" in
+        UUID=*|LABEL=*|PARTUUID=*|PARTLABEL=*)
+            dev="$(findfs "$device")" || panic_exec "device $device not found"
+            if [ -n "$dev" ]; then
+                device="$dev"
+            fi
+            ;;
+    esac
+}
+
+init_base() {
+    mount -o nosuid,noexec,nodev -t proc     proc /proc
+    mount -o nosuid,noexec,nodev -t sysfs    sys  /sys
+    mount -o nosuid,mode=0755    -t devtmpfs dev  /dev
+
+    ln -s /proc/self/fd   /dev/fd
+    ln -s /proc/self/fd/0 /dev/stdin
+    ln -s /proc/self/fd/1 /dev/stdout
+    ln -s /proc/self/fd/2 /dev/stderr
+}
+
+parse_cmdline() {
+    # https://kernel.org/doc/html/latest/admin-guide/kernel-parameters.html
+    # ... parameters with '=' go into init's environment ...
+    for param in $(cat /proc/cmdline); do
+        if [ -n "$escape" ]; then
+            if [ -n "$init_args" ]; then
+                init_args="$init_args $param"
+            else
+                init_args="$param"
+            fi
+        else
+            case "$param" in
+                rdpanic) trap - EXIT;;
+                rddebug) set -x;;
+
+                # Maintain backward compatibility with kernel parameters.
+                ro|rw)        export rorw="$param";;
+                root=*)       export root="${param#*=}";;
+                rootfstype=*) export rootfstype="${param#*=}";;
+                rootflags=*)  export rootflags="${param#*=}";;
+                init=*)       export init="${param#*=}";;
+                --)           escape="true";;
+            esac
+        fi
+    done
+}
+
+read_config() {
+    while IFS="=" read -r key value; do
+        if ! env | grep -q "^$key="; then
+            export "$key=$value"
+        fi
+    done </etc/tinyramfs.conf
+}
+
+eval_hooks() {
+    type="$1"
 
     # https://shellcheck.net/wiki/SC2086
     # shellcheck disable=2086
     { IFS=,; set -- $hooks; unset IFS; }
 
-    for _hook; do
-        [ -f "/lib/tinyramfs/hook.d/${_hook}/${_hook}.${_type}" ] || continue
-        [ "$rdbreak" = "$_hook" ] && panic "break before: ${_hook}.${_type}"
+    for hook; do
+        if ! [ -f "/lib/hook/$hook/$type" ]; then
+            continue
+        fi
+
+        if [ "$rdbreak" = "$hook" ]; then
+            panic "break before: $hook.$type"
+        fi
 
         # https://shellcheck.net/wiki/SC1090
         # shellcheck disable=1090
-        . "/lib/tinyramfs/hook.d/${_hook}/${_hook}.${_type}"
+        . "/lib/hook/$hook/$type"
     done
 }
 
-parse_cmdline()
-{
-    # XXX /proc/cmdline can contain multiline data?
-    read -r cmdline < /proc/cmdline
-
-    # https://kernel.org/doc/html/latest/admin-guide/kernel-parameters.html
-    # ... parameters with '=' go into init's environment ...
-    for _param in $cmdline; do case $_param in
-        rdpanic) trap - EXIT ;;
-        rddebug) set -x ;;
-
-        # Maintain backward compatibility with kernel parameters.
-        ro | rw)      rorw=$_param ;;
-        rootwait)     root_wait=-1 ;;
-        --)           init_args=${_param##*--}; break ;;
-        rootfstype=*) root_type=${_param#*=} ;;
-        rootflags=*)  root_opts=${_param#*=} ;;
-        rootdelay=*)  root_wait=${_param#*=} ;;
-        init=*)       init=${_param#*=} ;;
-    esac; done
-}
-
-mount_root()
-{
-    [ "$rdbreak" = root ] && panic 'break before: mount_root()'
-
-    resolve_device "$root" "$root_wait"
+mount_root() {
+    if [ "$rdbreak" = root ]; then
+        panic "break before: mount_root()"
+    fi
 
     # https://shellcheck.net/wiki/SC2086
     # shellcheck disable=2086
     mount \
-        -o "${rorw:-ro}${root_opts:+,$root_opts}" ${root_type:+-t "$root_type"} \
-        -- "$device" /mnt/root || panic "failed to mount rootfs: $device"
+        -o "${rorw:-ro}${rootflags:+,$rootflags}" ${rootfstype:+-t "$rootfstype"} \
+        -- "$root" /mnt || panic "failed to mount rootfs: $root"
 }
 
-boot_system()
-{
-    [ "$rdbreak" = boot ] && panic 'break before: boot_system()'
+boot_system() {
+    if [ "$rdbreak" = boot ]; then
+        panic "break before: boot_system()"
+    fi
 
-    for _dir in run dev sys proc; do
-        mount -o move "/${_dir}" "/mnt/root/${_dir}" || :
+    : "${init:=/sbin/init}"
+
+    if [ "$(stat -c %D /)" = "$(stat -c %D /mnt)" ]; then
+        panic_exec "failed to mount the real root device"
+    elif ! [ -x "/mnt$init" ]; then
+        panic_exec "root device mounted successfully, but $init does not exist"
+    fi
+
+    for dir in dev sys proc; do
+        mount -o move "/$dir" "/mnt/$dir" || umount "/$dir" || :
     done
 
     # POSIX 'exec' has no '-c' flag to execute command with empty environment.
@@ -87,33 +139,18 @@ boot_system()
     #
     # https://shellcheck.net/wiki/SC2086
     # shellcheck disable=2086
-    exec \
-        env -i TERM=linux PATH=/bin:/sbin:/usr/bin:/usr/sbin \
-        switch_root /mnt/root "${init:-/sbin/init}" $init_args ||
-        panic "failed to boot system"
+    exec env -i TERM="$TERM" switch_root /mnt "$init" $init_args
 }
 
-# TODO add `quiet` support
-
-# -e: Exit if command return status greater than 0
-# -f: Disable globbing *?[]
-set -ef
-
 # Run emergency shell if init unexpectedly exiting due to error.
-# TODO prompt to continue
-trap panic EXIT
-
-# https://shellcheck.net/wiki/SC1091
-# shellcheck disable=1091
-. /lib/tinyramfs/common.sh
-
-# https://shellcheck.net/wiki/SC1091
-# shellcheck disable=1091
-. /etc/tinyramfs/config
+trap panic_exec EXIT
 
 init_base
 parse_cmdline
+read_config
 eval_hooks init
+resolve_device "$root"
+root="$device"
 mount_root
 eval_hooks init.late
 boot_system

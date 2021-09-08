@@ -1,0 +1,13 @@
+# vim: set ft=sh:
+# shellcheck shell=sh
+#
+# https://shellcheck.net/wiki/SC2154
+# shellcheck disable=2154
+
+modules() {
+    { IFS=,; set -- $modules_load; unset IFS; }
+    for module; do
+        modprobe "$module"
+    done
+}
+modules

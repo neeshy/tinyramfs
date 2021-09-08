@@ -1,0 +1,16 @@
+# vim: set ft=sh:
+# shellcheck shell=sh
+#
+# https://shellcheck.net/wiki/SC2154
+# shellcheck disable=2154
+
+if [ -n "$zfs_key" ]; then
+    copy_file "$zfs_key" /root/zfs_key 400
+    add_config zfs_key /root/zfs_key
+fi
+
+[ -n "$zfs_root" ] && add_config zfs_root "$zfs_root"
+
+copy_kmod zfs
+copy_exec zfs
+copy_exec zpool
