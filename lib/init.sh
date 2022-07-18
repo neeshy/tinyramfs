@@ -101,6 +101,14 @@ eval_hooks() {
     done
 }
 
+check_root() {
+    if [ "$rdbreak" = fsck ]; then
+        panic "break before: check_root()"
+    fi
+
+    "fsck${rootfstype:+.$rootfstype}" "$root"
+}
+
 mount_root() {
     if [ "$rdbreak" = root ]; then
         panic "break before: mount_root()"
@@ -151,6 +159,7 @@ read_config
 eval_hooks init
 resolve_device "$root"
 root="$device"
+check_root
 mount_root
 eval_hooks init.late
 boot_system

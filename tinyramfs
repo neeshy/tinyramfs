@@ -59,6 +59,12 @@ init_base() {
         *) ln -s busybox "$tmpdir/bin/$bin";;
     esac; done
 
+    # TODO make filesystem agnostic
+    #   autodetect root filesystem type and let user override
+    copy_exec fsck
+    copy_exec e2fsck
+    ln -s e2fsck "$tmpdir/bin/fsck.ext4"
+
     [ -n "$root" ] && add_config root "$root"
     [ -n "$rootfstype" ] && add_config rootfstype "$rootfstype"
     [ -n "$rootflags" ] && add_config rootflags "$rootflags"
