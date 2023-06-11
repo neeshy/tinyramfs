@@ -5,7 +5,7 @@
 # shellcheck disable=2154
 
 modules() {
-    { IFS=,; set -- $modules_load; unset IFS; }
+    { IFS=","; set -- $modules_load; unset IFS; }
     for module; do
         modprobe "$module"
     done

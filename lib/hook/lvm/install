@@ -33,5 +33,5 @@ config='
 
 mkdir -p "$tmpdir/etc/lvm"
 
-lvm config --config "$config" \
+lvm config --config="$config" \
     ${lvm_config:+--mergedconfig} >"$tmpdir/etc/lvm/lvm.conf"

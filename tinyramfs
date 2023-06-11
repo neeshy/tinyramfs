@@ -4,6 +4,7 @@
 # shellcheck disable=2154
 
 set -e
+unset IFS
 
 # TODO add version
 usage() {
@@ -97,7 +98,7 @@ copy_exec() {
         *)
             # https://shellcheck.net/wiki/SC2086
             # shellcheck disable=2086
-            { IFS=:; set -- $PATH; unset IFS; }
+            { IFS=":"; set -- $PATH; unset IFS; }
 
             for dir; do
                 _bin="$dir/$bin"
@@ -140,7 +141,7 @@ copy_hooks() {
     # https://shellcheck.net/wiki/SC2086
     # shellcheck disable=2086
     add_config hooks "$hooks"
-    { IFS=,; set -- $hooks; unset IFS; }
+    { IFS=","; set -- $hooks; unset IFS; }
 
     for hook; do
         path="/usr/lib/tinyramfs/hook/$hook"

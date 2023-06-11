@@ -8,7 +8,7 @@ mkdir -p /run/cryptsetup
 
 resolve_device "$luks_root"
 
-DM_DISABLE_UDEV=1 cryptsetup open \
+DM_DISABLE_UDEV="1" cryptsetup open \
     ${luks_discard:+--allow-discards} \
     ${luks_header:+--header="$luks_header"} \
     ${luks_key:+--key-file="$luks_key"} -- "$device" \

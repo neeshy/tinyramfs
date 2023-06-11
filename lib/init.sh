@@ -5,6 +5,7 @@
 # shellcheck disable=2154,2034
 
 set -e
+unset IFS
 
 err() {
     printf '!> %s\n' "${1:-unexpected error occurred}" >&2
@@ -84,7 +85,7 @@ eval_hooks() {
 
     # https://shellcheck.net/wiki/SC2086
     # shellcheck disable=2086
-    { IFS=,; set -- $hooks; unset IFS; }
+    { IFS=","; set -- $hooks; unset IFS; }
 
     for hook; do
         if ! [ -f "/lib/hook/$hook/$type" ]; then

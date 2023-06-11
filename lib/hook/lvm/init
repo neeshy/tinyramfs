@@ -6,7 +6,7 @@
 
 mkdir -p /run/lvm /run/lock/lvm
 
-set -- --sysinit -qq -aay ${lvm_discard:+--config="devices{issue_discards=1}"}
+set -- --sysinit -qq -a ay ${lvm_discard:+--config="devices{issue_discards=1}"}
 
 if [ -n "$lvm_group" ] && [ -n "$lvm_name" ]; then
     set -- lvchange "$@" "$lvm_group/$lvm_name"
@@ -19,8 +19,8 @@ else
 fi
 
 # Handle race condition.
-count=0
-while ! DM_DISABLE_UDEV=1 lvm "$@"; do
+count="0"
+while ! DM_DISABLE_UDEV="1" lvm "$@"; do
     if [ "$((count += 1))" = 10 ]; then
         panic "failed to trigger LVM"
     else
