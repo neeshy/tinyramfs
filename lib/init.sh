@@ -48,6 +48,7 @@ init_base() {
 parse_cmdline() {
     # https://kernel.org/doc/html/latest/admin-guide/kernel-parameters.html
     # ... parameters with '=' go into init's environment ...
+    escape=""
     for param in $(cat /proc/cmdline); do
         if [ -n "$escape" ]; then
             if [ -n "$init_args" ]; then
@@ -74,7 +75,8 @@ parse_cmdline() {
 
 read_config() {
     while IFS="=" read -r key value; do
-        if ! env | grep -q "^$key="; then
+        key="$key="
+        if ! env | cut -c1-"${#key}" | grep -Fq "$key"; then
             export "$key=$value"
         fi
     done </etc/tinyramfs.conf
@@ -142,8 +144,8 @@ boot_system() {
     # POSIX 'exec' has no '-c' flag to execute command with empty environment.
     # Use 'env -i' instead to prevent leaking exported variables.
     #
-    # Some implementations of 'switch_root' doesn't conform to POSIX utility
-    # guidelines and doesn't support '--'. This means that safety of init_args
+    # Some implementations of 'switch_root' don't conform to POSIX utility
+    # guidelines and don't support '--'. This means that safety of init_args
     # isn't guaranteed.
     #
     # https://shellcheck.net/wiki/SC2086
