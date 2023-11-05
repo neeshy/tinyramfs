@@ -90,7 +90,7 @@ copy_file() {
 }
 
 copy_exec() {
-    bin="$(command -v "$1")"
+    bin="$(command -pv "$1")"
 
     case "$bin" in
         /*) ;;
