@@ -156,6 +156,11 @@ lvm_tag
 lvm_discard
 	*(bool)* Allow the use of discard (TRIM) requests for your LVM device.
 
+## RESUME
+
+resume
+	The location of your swap partition.
+
 ## ZFS
 
 zfs_key
