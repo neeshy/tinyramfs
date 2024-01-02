@@ -35,9 +35,9 @@ resolve_device() {
 }
 
 init_base() {
-    mount -o nosuid,nodev,noexec,noatime -t proc     proc /proc
-    mount -o nosuid,nodev,noexec,noatime -t sysfs    sys  /sys
-    mount -o nosuid,noatime,mode=0755    -t devtmpfs dev  /dev
+    mount -o nosuid,nodev,noexec -t proc     proc /proc
+    mount -o nosuid,nodev,noexec -t sysfs    sys  /sys
+    mount -o nosuid,mode=0755    -t devtmpfs dev  /dev
 
     ln -s /proc/self/fd   /dev/fd
     ln -s /proc/self/fd/0 /dev/stdin
