@@ -211,7 +211,7 @@ copy_modules() {
 
             find \
                 fs lib arch crypto drivers/md drivers/ata drivers/scsi \
-                drivers/block drivers/virtio drivers/usb/host \
+                drivers/nvme drivers/block drivers/virtio drivers/usb/host \
                 drivers/usb/storage drivers/input/keyboard -type f 2>/dev/null |
                 while IFS= read -r mod; do
                     copy_file "$mod" "/lib/modules/$kernel/kernel/$mod"
