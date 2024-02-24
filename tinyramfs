@@ -60,6 +60,11 @@ init_base() {
         *) ln -s busybox "$tmpdir/bin/$bin";;
     esac; done
 
+    copy_exec kmod
+    for bin in lsmod rmmod insmod modinfo modprobe depmod; do
+        ln -sf kmod "$tmpdir/bin/$bin"
+    done
+
     # TODO make filesystem agnostic
     #   autodetect root filesystem type and let user override
     copy_exec fsck
