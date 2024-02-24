@@ -77,7 +77,7 @@ read_config() {
     while IFS="=" read -r key value; do
         key="$key="
         if ! env | cut -c1-"${#key}" | grep -Fq "$key"; then
-            export "$key=$value"
+            export "$key$value"
         fi
     done </etc/tinyramfs.conf
 }
