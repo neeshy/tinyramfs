@@ -68,6 +68,8 @@ parse_cmdline() {
                 rootflags=*)  export rootflags="${param#*=}";;
                 init=*)       export init="${param#*=}";;
                 --)           escape="true";;
+                *=*)          ;;
+                *)            export "$param=";;
             esac
         fi
     done
