@@ -141,9 +141,6 @@ luks_discard
 
 ## LVM
 
-lvm_config
-	Path to your LVM configuration file.
-
 lvm_group
 	The name of your LVM volume group.
 
@@ -152,6 +149,9 @@ lvm_name
 
 lvm_tag
 	The tag of your LVM logical volume.
+
+lvm_config
+	*(bool)* Use the host's LVM configuration file.
 
 lvm_discard
 	*(bool)* Allow the use of discard (TRIM) requests for your LVM device.
