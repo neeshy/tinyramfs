@@ -65,11 +65,8 @@ init_base() {
         ln -sf kmod "$tmpdir/bin/$bin"
     done
 
-    # TODO make filesystem agnostic
-    #   autodetect root filesystem type and let user override
     copy_exec fsck
-    copy_exec e2fsck
-    ln -s e2fsck "$tmpdir/bin/fsck.ext4"
+    copy_exec "fsck.$(detect_rootfs)"
 
     [ -n "$root" ] && add_config root "$root"
     [ -n "$rootfstype" ] && add_config rootfstype "$rootfstype"
@@ -79,6 +76,16 @@ init_base() {
     [ -n "$init" ] && add_config init "$init"
 
     copy_file /usr/lib/tinyramfs/init.sh /init 755
+}
+
+detect_rootfs() {
+    while read -r _ dir type _; do
+        if [ "$dir" = / ]; then
+            printf '%s' "$type"
+            return
+        fi
+    done </proc/mounts
+    die "unable to detect rootfs module"
 }
 
 copy_file() {
@@ -200,13 +207,7 @@ copy_modules() {
         if [ -n "$root_type" ]; then
             copy_kmod "$root_type"
         else
-            while read -r _ dir type _; do
-                if [ "$dir" = / ]; then
-                    break
-                fi
-            done </proc/mounts || die "unable to detect rootfs module"
-
-            copy_kmod "$type"
+            copy_kmod "$(detect_rootfs)"
         fi
     else
         print "copying all modules"
