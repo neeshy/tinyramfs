@@ -29,8 +29,7 @@ resolve_device() {
             dev="$(findfs "$device")" || panic_exec "device $device not found"
             if [ -n "$dev" ]; then
                 device="$dev"
-            fi
-            ;;
+            fi;;
     esac
 }
 
