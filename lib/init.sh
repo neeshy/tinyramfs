@@ -91,13 +91,9 @@ eval_hooks() {
     { IFS=","; set -- $hooks; unset IFS; }
 
     for hook; do
-        if ! [ -f "/lib/hook/$hook/$type" ]; then
-            continue
-        fi
+        [ -f "/lib/hook/$hook/$type" ] || continue
 
-        if [ "$rdbreak" = "$hook" ]; then
-            panic "break before: $hook.$type"
-        fi
+        [ "$rdbreak" = "$hook" ] && panic "break before: $hook.$type"
 
         # https://shellcheck.net/wiki/SC1090
         # shellcheck disable=1090
@@ -106,17 +102,13 @@ eval_hooks() {
 }
 
 check_root() {
-    if [ "$rdbreak" = fsck ]; then
-        panic "break before: check_root()"
-    fi
+    [ "$rdbreak" = fsck ] && panic "break before: check_root()"
 
     "fsck${rootfstype:+.$rootfstype}" "$root"
 }
 
 mount_root() {
-    if [ "$rdbreak" = root ]; then
-        panic "break before: mount_root()"
-    fi
+    [ "$rdbreak" = root ] && panic "break before: mount_root()"
 
     # https://shellcheck.net/wiki/SC2086
     # shellcheck disable=2086
@@ -126,17 +118,12 @@ mount_root() {
 }
 
 boot_system() {
-    if [ "$rdbreak" = boot ]; then
-        panic "break before: boot_system()"
-    fi
+    [ "$rdbreak" = boot ] && panic "break before: boot_system()"
 
     : "${init:=/sbin/init}"
 
-    if [ "$(stat -c %D /)" = "$(stat -c %D /mnt)" ]; then
-        panic_exec "failed to mount the real root device"
-    elif ! [ -x "/mnt$init" ]; then
-        panic_exec "root device mounted successfully, but $init does not exist"
-    fi
+    [ "$(stat -c %D /)" = "$(stat -c %D /mnt)" ] && panic_exec "failed to mount the real root device"
+    [ -x "/mnt$init" ] || panic_exec "root device mounted successfully, but $init does not exist"
 
     for dir in dev sys proc; do
         mount -o move "/$dir" "/mnt/$dir" || umount "/$dir" || :

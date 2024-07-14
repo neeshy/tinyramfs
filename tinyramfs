@@ -120,9 +120,7 @@ copy_exec() {
                 fi
             done
 
-            if ! [ -x "$bin" ]; then
-                die "unable to find command: $bin"
-            fi;;
+            [ -x "$bin" ] || die "unable to find command: $bin";;
     esac
 
     copy_file "$bin" "/bin/$(basename "$bin")" 755 strip
@@ -163,9 +161,7 @@ copy_hooks() {
         fi
 
         for ext in init init.late; do
-            if ! [ -f "$path/$ext" ]; then
-                continue
-            fi
+            [ -f "$path/$ext" ] || continue
 
             print "copying hook: $hook/$ext"
 
