@@ -54,6 +54,13 @@ init_base() {
     ln -s bin "$tmpdir/sbin"
     ln -s lib "$tmpdir/lib64"
 
+    [ -n "$root" ] && add_config root "$root"
+    [ -n "$rootfstype" ] && add_config rootfstype "$rootfstype"
+    [ -n "$rootflags" ] && add_config rootflags "$rootflags"
+    [ -n "$ro" ] && add_config ro true
+    [ -n "$rw" ] && add_config rw true
+    [ -n "$init" ] && add_config init "$init"
+
     copy_exec busybox
     for bin in $("$tmpdir/bin/busybox" --list); do case "$bin" in
         busybox) continue;;
@@ -66,14 +73,8 @@ init_base() {
     done
 
     copy_exec fsck
-    copy_exec "fsck.$(detect_rootfs)"
-
-    [ -n "$root" ] && add_config root "$root"
-    [ -n "$rootfstype" ] && add_config rootfstype "$rootfstype"
-    [ -n "$rootflags" ] && add_config rootflags "$rootflags"
-    [ -n "$ro" ] && add_config ro true
-    [ -n "$rw" ] && add_config rw true
-    [ -n "$init" ] && add_config init "$init"
+    [ -z "$rootfstype" ] && detect_rootfs
+    copy_exec "fsck.$rootfstype"
 
     copy_file /usr/lib/tinyramfs/init.sh /init 755
 }
@@ -81,7 +82,7 @@ init_base() {
 detect_rootfs() {
     while read -r _ dir type _; do
         if [ "$dir" = / ]; then
-            printf '%s' "$type"
+            rootfstype="$type"
             return
         fi
     done </proc/mounts
@@ -199,11 +200,8 @@ copy_modules() {
                 copy_kmod "$mod"
             done
 
-        if [ -n "$root_type" ]; then
-            copy_kmod "$root_type"
-        else
-            copy_kmod "$(detect_rootfs)"
-        fi
+        [ -z "$rootfstype" ] && detect_rootfs
+        copy_kmod "$rootfstype"
     else
         print "copying all modules"
 
