@@ -121,7 +121,8 @@ copy_exec() {
                 fi
             done
 
-            [ -x "$bin" ] || die "unable to find command: $bin";;
+            [ -x "$bin" ] || die "unable to find command: $bin"
+            ;;
     esac
 
     copy_file "$bin" "/bin/$(basename "$bin")" 755 strip
