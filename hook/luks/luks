@@ -22,13 +22,12 @@
     mv "${tmpdir}/_" "${tmpdir}/etc/tinyramfs/config"
 }
 
-[ "$hostonly" ] &&
-    for _mod in \
-        aes ecb xts lrw wp512 sha256 \
-        sha512 twofish serpent dm-crypt
-    do
-        copy_kmod "$_mod"
-    done
+for _mod in \
+    aes ecb xts lrw wp512 sha256 \
+    sha512 twofish serpent dm-crypt
+do
+    copy_kmod "$_mod"
+done
 
 # https://bugs.archlinux.org/task/56771
 [ -e /lib/libgcc_s.so.1 ] && copy_file /lib/libgcc_s.so.1 /lib/libgcc_s.so.1 0755 1
