@@ -17,13 +17,11 @@ fi
 [ -n "$luks_root" ] && add_config luks_root "$luks_root"
 [ -n "$luks_name" ] && add_config luks_name "$luks_name"
 
-if [ -n "$hostonly" ]; then
-    for mod in \
-            aes ecb xts lrw wp512 sha256 \
-            sha512 twofish serpent dm-crypt; do
-        copy_kmod "$mod"
-    done
-fi
+for mod in \
+        aes ecb xts lrw wp512 sha256 \
+        sha512 twofish serpent dm-crypt; do
+    copy_kmod "$mod"
+done
 
 # https://bugs.archlinux.org/task/56771
 copy_file "$(ldconfig -p | awk '/^	libgcc_s\.so\.1/ {print $4; exit}')" /lib/libgcc_s.so.1 755 1

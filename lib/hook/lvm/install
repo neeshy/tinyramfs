@@ -4,13 +4,11 @@
 # https://shellcheck.net/wiki/SC2154
 # shellcheck disable=2154
 
-if [ -n "$hostonly" ]; then
-    for mod in \
-            dm-log dm-cache dm-mirror \
-            dm-snapshot dm-multipath dm-thin-pool; do
-        copy_kmod "$mod"
-    done
-fi
+for mod in \
+        dm-log dm-cache dm-mirror \
+        dm-snapshot dm-multipath dm-thin-pool; do
+    copy_kmod "$mod"
+done
 
 [ -n "$lvm_group" ] && add_config lvm_group "$lvm_group"
 [ -n "$lvm_name" ] && add_config lvm_name "$lvm_name"
