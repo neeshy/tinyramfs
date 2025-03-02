@@ -28,7 +28,7 @@ print() {
 }
 
 die() {
-    print "${1:-unexpected error occurred}" "!>" >&2
+    print "${1:-unexpected error occurred}" '!>' >&2
     exit 1
 }
 
@@ -37,7 +37,7 @@ add_config() {
 }
 
 init_base() {
-    print "creating ramfs structure"
+    print 'creating ramfs structure'
 
     mkdir -p "${tmpdir:=${TMPDIR:-/tmp}/tinyramfs.$$}"
 
@@ -86,7 +86,7 @@ detect_rootfs() {
             return
         fi
     done </proc/mounts
-    die "unable to detect rootfs module"
+    die 'unable to detect rootfs module'
 }
 
 copy_file() {
@@ -107,11 +107,11 @@ copy_exec() {
 
     case "$bin" in
         /*) ;;
-        "") die "unable to find command: $1";;
+        '') die "unable to find command: $1";;
         *)
             # https://shellcheck.net/wiki/SC2086
             # shellcheck disable=2086
-            { IFS=":"; set -- $PATH; unset IFS; }
+            { IFS=:; set -- $PATH; unset IFS; }
 
             for dir; do
                 _bin="$dir/$bin"
@@ -152,7 +152,7 @@ copy_hooks() {
     # https://shellcheck.net/wiki/SC2086
     # shellcheck disable=2086
     add_config hooks "$hooks"
-    { IFS=","; set -- $hooks; unset IFS; }
+    { IFS=,; set -- $hooks; unset IFS; }
 
     for hook; do
         path="/usr/lib/tinyramfs/hook/$hook"
@@ -186,7 +186,7 @@ copy_modules() {
     if [ -n "$monolith" ]; then
         return
     elif [ -n "$hostonly" ]; then
-        print "copying hostonly modules"
+        print 'copying hostonly modules'
 
         # Perform autodetection of modules via /sys
         # https://wiki.archlinux.org/index.php/Modalias
@@ -204,7 +204,7 @@ copy_modules() {
         [ -z "$rootfstype" ] && detect_rootfs
         copy_kmod "$rootfstype"
     else
-        print "copying all modules"
+        print 'copying all modules'
 
         (
             cd "$moddir/$kernel/kernel"
@@ -233,12 +233,12 @@ copy_modules() {
 }
 
 create_image() {
-    print "generating initramfs image"
+    print 'generating initramfs image'
 
     (cd "$tmpdir" && find . | cpio -oH newc -R +0:+0 2>/dev/null) | ${compress:-cat} >"$output" ||
-        die "failed to generate initramfs image"
+        die 'failed to generate initramfs image'
 
-    print "done: $output" "+>"
+    print "done: $output" '+>'
 }
 
 while getopts k:m:H:c:nMdh opt; do case "$opt" in
@@ -246,9 +246,9 @@ while getopts k:m:H:c:nMdh opt; do case "$opt" in
     m) moddir="$OPTARG";;
     H) hooks="$OPTARG";;
     c) compress="$OPTARG";;
-    n) monolithic="true";;
-    M) hostonly="true";;
-    d) debug="true";;
+    n) monolithic=true;;
+    M) hostonly=true;;
+    d) debug=true;;
     h) usage 0;;
     ?) usage 2;;
 esac; done

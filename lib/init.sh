@@ -48,7 +48,7 @@ init_base() {
 parse_cmdline() {
     # https://kernel.org/doc/html/latest/admin-guide/kernel-parameters.html
     # ... parameters with '=' go into init's environment ...
-    escape=""
+    escape=
     for param in $(cat /proc/cmdline); do
         if [ -n "$escape" ]; then
             if [ -n "$init_args" ]; then
@@ -67,7 +67,7 @@ parse_cmdline() {
                 rootfstype=*) export rootfstype="${param#*=}";;
                 rootflags=*)  export rootflags="${param#*=}";;
                 init=*)       export init="${param#*=}";;
-                --)           escape="true";;
+                --)           escape=true;;
                 *=*)          ;;
                 *)            export "$param=";;
             esac
@@ -76,7 +76,7 @@ parse_cmdline() {
 }
 
 read_config() {
-    while IFS="=" read -r key value; do
+    while IFS== read -r key value; do
         key="$key="
         if ! env | cut -c1-"${#key}" | grep -Fq "$key"; then
             export "$key$value"
@@ -89,7 +89,7 @@ eval_hooks() {
 
     # https://shellcheck.net/wiki/SC2086
     # shellcheck disable=2086
-    { IFS=","; set -- $hooks; unset IFS; }
+    { IFS=,; set -- $hooks; unset IFS; }
 
     for hook; do
         [ -f "/lib/hook/$hook/$type" ] || continue
@@ -103,13 +103,13 @@ eval_hooks() {
 }
 
 check_root() {
-    [ "$rdbreak" = fsck ] && panic "break before: check_root()"
+    [ "$rdbreak" = fsck ] && panic 'break before: check_root()'
 
     "fsck${rootfstype:+.$rootfstype}" "$root"
 }
 
 mount_root() {
-    [ "$rdbreak" = root ] && panic "break before: mount_root()"
+    [ "$rdbreak" = root ] && panic 'break before: mount_root()'
 
     # https://shellcheck.net/wiki/SC2086
     # shellcheck disable=2086
@@ -119,11 +119,11 @@ mount_root() {
 }
 
 boot_system() {
-    [ "$rdbreak" = boot ] && panic "break before: boot_system()"
+    [ "$rdbreak" = boot ] && panic 'break before: boot_system()'
 
     : "${init:=/sbin/init}"
 
-    [ "$(stat -c %D /)" = "$(stat -c %D /mnt)" ] && panic_exec "failed to mount the real root device"
+    [ "$(stat -c %D /)" = "$(stat -c %D /mnt)" ] && panic_exec 'failed to mount the real root device'
     [ -x "/mnt$init" ] || panic_exec "root device mounted successfully, but $init does not exist"
 
     for dir in dev sys proc; do

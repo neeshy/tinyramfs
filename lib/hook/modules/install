@@ -7,7 +7,7 @@
 modules() {
     if [ -n "$modules_load" ]; then
         add_config modules_load "$modules_load"
-        { IFS=","; set -- $modules_load; unset IFS; }
+        { IFS=,; set -- $modules_load; unset IFS; }
         for module; do
             copy_kmod "$module"
         done
