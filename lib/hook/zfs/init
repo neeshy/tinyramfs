@@ -7,10 +7,10 @@
 modprobe zfs 2>/dev/null
 
 resolve_device "$zfs_root"
-zpool import -Nd "$device" "${root%%/*}"
+zpool import -N -d "$device" -- "${root%%/*}"
 
 if [ -n "$zfs_key" ]; then
     zfs load-key -L prompt -a <"$zfs_key"
-elif [ "$(zfs get -Ho value encryption "$root")" != off ]; then
+elif [ "$(zfs get -H -o value encryption -- "$root")" != off ]; then
     zfs load-key -L prompt -a
 fi

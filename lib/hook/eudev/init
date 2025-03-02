@@ -4,7 +4,7 @@
 # https://shellcheck.net/wiki/SC2154
 # shellcheck disable=2154
 
-udevd -dN never
+udevd -d -N never
 udevadm trigger -c add -t subsystems
 udevadm trigger -c add -t devices
 udevadm settle

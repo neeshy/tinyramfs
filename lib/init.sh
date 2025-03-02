@@ -78,8 +78,8 @@ parse_cmdline() {
 read_config() {
     while IFS== read -r key value; do
         key="$key="
-        if ! env | cut -c1-"${#key}" | grep -Fq "$key"; then
-            export "$key$value"
+        if ! env | cut -c1-"${#key}" | grep -Fq -- "$key"; then
+            export -- "$key$value"
         fi
     done </etc/tinyramfs.conf
 }
@@ -105,7 +105,7 @@ eval_hooks() {
 check_root() {
     [ "$rdbreak" = fsck ] && panic 'break before: check_root()'
 
-    "fsck${rootfstype:+.$rootfstype}" "$root"
+    "fsck${rootfstype:+.$rootfstype}" -- "$root"
 }
 
 mount_root() {

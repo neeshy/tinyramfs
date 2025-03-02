@@ -9,11 +9,11 @@ mkdir -p /run/lvm /run/lock/lvm
 set -- --sysinit -qq -a ay ${lvm_discard+--config='devices{issue_discards=1}'}
 
 if [ -n "$lvm_group" ] && [ -n "$lvm_name" ]; then
-    set -- lvchange "$@" "$lvm_group/$lvm_name"
+    set -- lvchange "$@" -- "$lvm_group/$lvm_name"
 elif [ -n "$lvm_group" ]; then
-    set -- vgchange "$@" "$lvm_group"
+    set -- vgchange "$@" -- "$lvm_group"
 elif [ -n "$lvm_tag" ]; then
-    set -- lvchange "$@" "@$lvm_tag"
+    set -- lvchange "$@" -- "@$lvm_tag"
 else
     set -- vgchange "$@"
 fi

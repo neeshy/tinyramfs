@@ -39,20 +39,20 @@ add_config() {
 init_base() {
     print 'creating ramfs structure'
 
-    mkdir -p "${tmpdir:=${TMPDIR:-/tmp}/tinyramfs.$$}"
+    mkdir -p -- "${tmpdir:=${TMPDIR:-/tmp}/tinyramfs.$$}"
 
     if [ -n "$debug" ]; then
         set -x
     else
-        trap 'rm -rf "$tmpdir"' EXIT INT
+        trap 'rm -rf -- "$tmpdir"' EXIT INT
     fi
 
     for dir in dev sys proc lib bin etc mnt; do
-        mkdir -p "$tmpdir/$dir"
+        mkdir -p -- "$tmpdir/$dir"
     done
-    ln -s . "$tmpdir/usr"
-    ln -s bin "$tmpdir/sbin"
-    ln -s lib "$tmpdir/lib64"
+    ln -s -- . "$tmpdir/usr"
+    ln -s -- bin "$tmpdir/sbin"
+    ln -s -- lib "$tmpdir/lib64"
 
     [ -n "$root" ] && add_config root "$root"
     [ -n "$rootfstype" ] && add_config rootfstype "$rootfstype"
@@ -64,12 +64,12 @@ init_base() {
     copy_exec busybox
     for bin in $("$tmpdir/bin/busybox" --list); do case "$bin" in
         busybox) continue;;
-        *) ln -s busybox "$tmpdir/bin/$bin";;
+        *) ln -s -- busybox "$tmpdir/bin/$bin";;
     esac; done
 
     copy_exec kmod
     for bin in lsmod rmmod insmod modinfo modprobe depmod; do
-        ln -sf kmod "$tmpdir/bin/$bin"
+        ln -sf -- kmod "$tmpdir/bin/$bin"
     done
 
     copy_exec fsck
@@ -95,15 +95,15 @@ copy_file() {
     mode="${3:-644}"
     strip="$4"
 
-    install -D -m "$mode" "$file" "$tmpdir/$dest"
+    install -D -m "$mode" -- "$file" "$tmpdir/$dest"
 
     if [ -n "$strip" ]; then
-        strip "$tmpdir/$dest" >/dev/null 2>&1 || :
+        strip -- "$tmpdir/$dest" >/dev/null 2>&1 || :
     fi
 }
 
 copy_exec() {
-    bin="$(command -pv "$1")"
+    bin="$(command -pv -- "$1")"
 
     case "$bin" in
         /*) ;;
@@ -125,21 +125,21 @@ copy_exec() {
             ;;
     esac
 
-    copy_file "$bin" "/bin/$(basename "$bin")" 755 strip
+    copy_file "$bin" "/bin/$(basename -- "$bin")" 755 strip
 
-    ldd "$bin" 2>/dev/null |
+    ldd -- "$bin" 2>/dev/null |
         while IFS= read -r lib; do
             lib="/${lib#*/}"
             lib="${lib% *}"
 
             if [ -e "$lib" ]; then
-                copy_file "$lib" "/lib/$(basename "$lib")" 755 strip
+                copy_file "$lib" "/lib/$(basename -- "$lib")" 755 strip
             fi
         done
 }
 
 copy_kmod() {
-    modprobe -S "$kernel" -D "$1" 2>/dev/null |
+    modprobe -D -S "$kernel" -- "$1" 2>/dev/null |
         while read -r _ mod _; do
             case "$mod" in
               /*) copy_file "$mod" "$mod"
@@ -194,7 +194,7 @@ copy_modules() {
             while IFS= read -r mod; do
                 # Skip unneeded modules and skip modules which
                 # depends on them as well.
-                case "$(modprobe -S "$kernel" -D "$mod")" in
+                case "$(modprobe -D -S "$kernel" -- "$mod")" in
                     *wmi*|*gpu*|*net*) continue;;
                 esac 2>/dev/null
 
@@ -229,13 +229,13 @@ copy_modules() {
     copy_file "${moddir}/${kernel}/modules.builtin.modinfo" \
               "/lib/modules/${kernel}/modules.builtin.modinfo" 0644
 
-    depmod -b "$tmpdir" "$kernel"
+    depmod -b "$tmpdir" -- "$kernel"
 }
 
 create_image() {
     print 'generating initramfs image'
 
-    (cd "$tmpdir" && find . | cpio -oH newc -R +0:+0 2>/dev/null) | ${compress:-cat} >"$output" ||
+    (cd -- "$tmpdir" && find . | cpio -oH newc -R +0:+0 2>/dev/null) | ${compress:-cat} >"$output" ||
         die 'failed to generate initramfs image'
 
     print "done: $output" '+>'
