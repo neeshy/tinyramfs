@@ -5,5 +5,5 @@
 # shellcheck disable=2154
 
 resolve_device "$resume"
-dev_path="$(readlink "$device")"
+dev_path="$(readlink -- "$device")"
 cat "/sys/class/block/${dev_path##*/}/dev" >/sys/power/resume || panic 'failed to resume'
