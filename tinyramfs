@@ -62,10 +62,9 @@ init_base() {
     [ -n "$init" ] && add_config init "$init"
 
     copy_exec busybox
-    for bin in $("$tmpdir/bin/busybox" --list); do case "$bin" in
-        busybox) continue;;
-        *) ln -s -- busybox "$tmpdir/bin/$bin";;
-    esac; done
+    for bin in $("$tmpdir/bin/busybox" --list); do
+        [ "$bin" != busybox ] && ln -s -- busybox "$tmpdir/bin/$bin"
+    done
 
     copy_exec kmod
     for bin in lsmod rmmod insmod modinfo modprobe depmod; do
@@ -194,9 +193,9 @@ copy_modules() {
             while IFS= read -r mod; do
                 # Skip unneeded modules and skip modules which
                 # depends on them as well.
-                case "$(modprobe -D -S "$kernel" -- "$mod")" in
+                case "$(modprobe -D -S "$kernel" -- "$mod" 2>/dev/null)" in
                     *wmi*|*gpu*|*net*) continue;;
-                esac 2>/dev/null
+                esac
 
                 copy_kmod "$mod"
             done

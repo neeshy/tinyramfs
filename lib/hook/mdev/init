@@ -14,6 +14,6 @@ mdev_pid="$!"
 for i in 1 2; do
     find /sys/devices -name uevent |
         while IFS= read -r uevent; do
-            printf add >"$uevent"
-        done 2>/dev/null
+            printf add >"$uevent" 2>/dev/null
+        done
 done
