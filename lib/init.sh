@@ -69,7 +69,7 @@ parse_cmdline() {
                 init=*)       export init="${param#*=}";;
                 --)           escape=true;;
                 *=*)          ;;
-                *)            export "$param=";;
+                *)            export -- "$param=";;
             esac
         fi
     done
