@@ -48,31 +48,20 @@ init_base() {
 parse_cmdline() {
     # https://kernel.org/doc/html/latest/admin-guide/kernel-parameters.html
     # ... parameters with '=' go into init's environment ...
-    escape=
-    for param in $(cat /proc/cmdline); do
-        if [ -n "$escape" ]; then
-            if [ -n "$init_args" ]; then
-                init_args="$init_args $param"
-            else
-                init_args="$param"
-            fi
-        else
-            case "$param" in
-                rdpanic) trap - EXIT;;
-                rddebug) set -x;;
+    for param in $(cat /proc/cmdline); do case "$param" in
+        rdpanic) trap - EXIT;;
+        rddebug) set -x;;
 
-                # Maintain backward compatibility with kernel parameters.
-                ro|rw)        export rorw="$param";;
-                root=*)       export root="${param#*=}";;
-                rootfstype=*) export rootfstype="${param#*=}";;
-                rootflags=*)  export rootflags="${param#*=}";;
-                init=*)       export init="${param#*=}";;
-                --)           escape=true;;
-                *=*)          ;;
-                *)            export -- "$param=";;
-            esac
-        fi
-    done
+        # Maintain compatibility with kernel parameters.
+        ro|rw)        export rorw="$param";;
+        root=*)       export root="${param#*=}";;
+        rootfstype=*) export rootfstype="${param#*=}";;
+        rootflags=*)  export rootflags="${param#*=}";;
+        init=*)       export init="${param#*=}";;
+        --)           break;;
+        *=*)          ;;
+        *)            export -- "$param=";;
+    esac; done
 }
 
 read_config() {
@@ -134,12 +123,12 @@ boot_system() {
     # Use 'env -i' instead to prevent leaking exported variables.
     #
     # Some implementations of 'switch_root' don't conform to POSIX utility
-    # guidelines and don't support '--'. This means that safety of init_args
+    # guidelines and don't support '--'. This means that safety of argv
     # isn't guaranteed.
     #
     # https://shellcheck.net/wiki/SC2086
     # shellcheck disable=2086
-    exec env -i TERM="$TERM" switch_root /mnt "$init" $init_args
+    exec env -i TERM="$TERM" switch_root /mnt "$init" "$@"
 }
 
 # Run emergency shell if init unexpectedly exiting due to error.
@@ -154,4 +143,4 @@ root="$device"
 check_root
 mount_root
 eval_hooks init.late
-boot_system
+boot_system "$@"
